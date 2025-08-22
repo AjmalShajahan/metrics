@@ -1,37 +1,35 @@
-# Base image
-FROM node:20-bookworm-slim
+FROM node:22-trixie-slim
 
-# Copy repository
-COPY . /metrics
 WORKDIR /metrics
 
-# Setup
-RUN chmod +x /metrics/source/app/action/index.mjs \
-  # Install latest chrome dev package, fonts to support major charsets and skip chromium download on puppeteer install
-  # Based on https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-in-docker
-  && apt-get update \
-  && apt-get install -y wget gnupg ca-certificates libgconf-2-4 \
-  && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-  && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
-  && apt-get update \
-  && apt-get install -y google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf libxss1 libx11-xcb1 libxtst6 lsb-release --no-install-recommends \
-  # Install deno for miscellaneous scripts
-  && apt-get install -y curl unzip \
-  && curl -fsSL https://deno.land/x/install/install.sh | DENO_INSTALL=/usr/local sh \
-  # Install ruby to support github licensed gem
-  && apt-get install -y ruby-full git g++ cmake pkg-config libssl-dev \
-  && gem install licensed \
-  # Install python for node-gyp
-  && apt-get install -y python3 \
-  # Clean apt/lists
-  && rm -rf /var/lib/apt/lists/* \
-  # Install node modules and rebuild indexes
-  && npm ci \
-  && npm run build
+# Install system dependencies, Chrome and deno
+RUN apt-get -qq update \
+    && apt-get -qqy install wget curl unzip python3 \
+    && wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+    && apt-get -qqy install ./google-chrome-stable_current_amd64.deb fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst-one fonts-freefont-ttf libxss1 libx11-xcb1 libxtst6 lsb-release -f --no-install-recommends \
+    && curl -fsSL https://deno.land/x/install/install.sh | DENO_INSTALL=/usr/local sh \
+    && rm google-chrome-stable_current_amd64.deb \
+    && rm -rf /var/lib/apt/lists/*
 
-# Environment variables
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
-ENV PUPPETEER_BROWSER_PATH "google-chrome-stable"
+# Install licensed gem
+COPY --from=pkgxdev/pkgx:busybox /usr/local/bin/pkgx /usr/local/bin/pkgx
+COPY --chmod=+x <<EOF /usr/local/bin/licensed
+#!/usr/bin/env -S pkgx --shebang --quiet +github.com/licensee/licensed@5 -- licensed
+EOF
+
+# Copy only package files first for layer caching
+COPY package*.json ./
+
+# Install node modules
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_BROWSER_PATH="google-chrome-stable"
+RUN npm ci
+
+# Copy the rest of the source code
+COPY . .
+
+# Build and set permissions
+RUN npm run build && chmod +x /metrics/source/app/action/index.mjs
 
 # Execute GitHub action
-ENTRYPOINT node /metrics/source/app/action/index.mjs
+ENTRYPOINT [ "node", "/metrics/source/app/action/index.mjs" ]
