@@ -1,0 +1,13 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:best-practices", "schedule:weekly"],
+  "baseBranchPatterns": ["test"],
+  "enabledManagers": ["github-actions"],
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions (pinned digests)",
+      "groupSlug": "github-actions-digests"
+    }
+  ]
+}
