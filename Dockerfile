@@ -22,7 +22,7 @@ COPY package*.json ./
 
 # Install node modules
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_BROWSER_PATH="google-chrome-stable"
+ENV PUPPETEER_BROWSER_PATH="/usr/bin/google-chrome-stable"
 RUN npm ci
 
 # Copy the rest of the source code
