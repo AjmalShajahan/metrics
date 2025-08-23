@@ -1,7 +1,7 @@
 query ProjectsRepository {
   $account(login: "$user") {
     repository(name: "$repository") {
-      projectV2(number: $id) {
+      project:projectV2(number: $id) {
         name: title
         body: shortDescription
         updatedAt

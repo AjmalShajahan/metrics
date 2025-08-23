@@ -4,7 +4,7 @@ export default function({faker, query, login = faker.internet.userName()}) {
   return ({
     user: {
       repository: {
-        projectV2: {
+        project: {
           name: "Repository project example",
           updatedAt: `${faker.date.recent()}`,
           body: faker.lorem.paragraph(),
