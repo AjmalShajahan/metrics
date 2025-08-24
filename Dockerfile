@@ -4,7 +4,7 @@ WORKDIR /metrics
 
 # Install system dependencies, Chrome and deno
 RUN apt-get -qq update \
-    && apt-get -qqy install wget curl unzip python3 \
+    && apt-get -qqy install git wget curl unzip python3 \
     && wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
     && apt-get -qqy install ./google-chrome-stable_current_amd64.deb fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst-one fonts-freefont-ttf libxss1 libx11-xcb1 libxtst6 lsb-release -f --no-install-recommends \
     && curl -fsSL https://deno.land/x/install/install.sh | DENO_INSTALL=/usr/local sh \
