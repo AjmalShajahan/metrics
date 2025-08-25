@@ -3,7 +3,7 @@ export default function({faker, query, login = faker.internet.userName()}) {
   console.debug("metrics/compute/mocks > mocking graphql api result > projects/user")
   return ({
     user: {
-      projectsV2: {
+      projects: {
         totalCount: 1,
         nodes: [
           {

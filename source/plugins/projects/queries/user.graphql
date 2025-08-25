@@ -1,6 +1,6 @@
 query ProjectsUser {
   $account(login: "$login") {
-    projectsV2(last: $limit, orderBy: {field: UPDATED_AT, direction: DESC}) {
+    projects:projectsV2(last: $limit, orderBy: {field: UPDATED_AT, direction: DESC}) {
       totalCount
       nodes {
         name: title
