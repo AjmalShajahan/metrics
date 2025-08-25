@@ -92,6 +92,9 @@ export class Analyzer {
     if (process.env.GITHUB_ACTIONS) {
       token = core.getInput("token")
     }
+    else if (process.env.INPUT_TOKEN) {
+      token = process.env.INPUT_TOKEN
+    }
 
     let url = /^https?:\/\//.test(repo) ? repo : `https://${token}@github.com/${repo}`
     try {
