@@ -82,8 +82,9 @@ export default async function({login, q, imports, rest, graphql, data, account, 
           const maintainers = collaborators.filter(({role_name: role}) => ["admin", "maintain", "write"].includes(role)).map(({login}) => login)
 
           //Count total commits of user
-          const {data: contributions = []} = await rest.repos.getContributorsStats({owner, repo})
-          const commits = contributions?.filter(({author}) => author.login.toLocaleLowerCase() === login.toLocaleLowerCase()).reduce((a, {total: b}) => a + b, 0) ?? NaN
+          const {data: rawContributions = []} = await rest.repos.getContributorsStats({owner, repo})
+          const contributionsArr = Array.isArray(rawContributions) ? rawContributions : [];
+          const commits = contributionsArr.filter(({author}) => author.login?.toLocaleLowerCase() === login.toLocaleLowerCase()).reduce((a, {total: b}) => a + b, 0) ?? NaN
 
           //Save user data
           contribution.user = {
@@ -109,7 +110,7 @@ export default async function({login, q, imports, rest, graphql, data, account, 
     console.debug(`metrics/compute/${login}/plugins > notable > aggregating results`)
     const aggregated = new Map()
     for (const {name, handle, avatar, organization = handle.split("/").shift() ?? "", stars, ..._extras} of contributions) {
-      const key = repositories ? handle : name
+      const key = !organization || repositories ? handle : name
       if (aggregated.has(key)) {
         const aggregate = aggregated.get(key)
         aggregate.aggregated++
