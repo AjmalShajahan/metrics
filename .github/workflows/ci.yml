@@ -10,7 +10,7 @@ jobs:
   build-test-analyze:
     name: Build, test and analyze
     if: "!contains(github.event.head_commit.message, '[skip test]')"
-    uses: lowlighter/metrics/.github/workflows/test.yml@master
+    uses: lowlighter/metrics/.github/workflows/test.yml@366f8b9dfe3a59656c67d5dcad9950f59c9bc96d # master
 
   # Format code
   format:
@@ -20,7 +20,7 @@ jobs:
     if: always() && (needs.build-test-analyze.result == 'success' || needs.build-test-analyze.result == 'skipped')
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
       - name: Checkout master
@@ -47,7 +47,7 @@ jobs:
     needs: [ format ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
       - name: Setup NodeJS
@@ -70,7 +70,7 @@ jobs:
     needs: [ update-indexes ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
       - name: Setup NodeJS
@@ -93,7 +93,7 @@ jobs:
     needs: [ update-indexes ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Login to GitHub registry
         run: echo ${{ github.token }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Build docker image
@@ -136,7 +136,7 @@ jobs:
     needs: [ docker-master ]
     steps:
       - name: Run tests
-        uses: lowlighter/metrics@master
+        uses: lowlighter/metrics@366f8b9dfe3a59656c67d5dcad9950f59c9bc96d # master
         with:
           token: MOCKED_TOKEN
           plugins_errors_fatal: yes
@@ -148,7 +148,7 @@ jobs:
   publish-examples:
     name: Publish examples
     needs: [ action-master-test ]
-    uses: lowlighter/metrics/.github/workflows/examples.yml@master
+    uses: lowlighter/metrics/.github/workflows/examples.yml@366f8b9dfe3a59656c67d5dcad9950f59c9bc96d # master
     secrets:
       METRICS_TOKEN: ${{ secrets.METRICS_TOKEN }}
       METRICS_TOKEN_WITH_SCOPES: ${{ secrets.METRICS_TOKEN_WITH_SCOPES }}
@@ -168,7 +168,7 @@ jobs:
   publish-examples-presets:
     name: Publish examples (presets)
     needs: [ action-master-test ]
-    uses: lowlighter/metrics/.github/workflows/examples.presets.yml@master
+    uses: lowlighter/metrics/.github/workflows/examples.presets.yml@366f8b9dfe3a59656c67d5dcad9950f59c9bc96d # master
 
   # Build docker image from master and publish it to GitHub registry with release tag
   docker-release:
@@ -178,7 +178,7 @@ jobs:
     if: contains(github.event.head_commit.message, '[release]')
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Login to GitHub registry
         run: echo ${{ github.token }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Pull docker image (master)
@@ -203,7 +203,7 @@ jobs:
     needs: [ docker-release ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
       - name: Setup NodeJS
@@ -228,7 +228,7 @@ jobs:
     needs: [ update-latest ]
     steps:
       - name: Run tests
-        uses: lowlighter/metrics@latest
+        uses: lowlighter/metrics@65836723097537a54cd8eb90f61839426b4266b6 # latest
         with:
           token: MOCKED_TOKEN
           plugins_errors_fatal: yes
@@ -256,7 +256,7 @@ jobs:
     needs: [ action-latest-test, deploy-latest ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Setup NodeJS
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
