@@ -31,6 +31,8 @@ echo "Renders output folder: $METRICS_RENDERS"
 # Source repository (picked from action name)
 METRICS_SOURCE=$(echo $METRICS_ACTION | sed -E 's/metrics.*?$//g' | sed -E 's/_//g')
 echo "Source: $METRICS_SOURCE"
+echo "Action repository: $METRICS_ACTION_REPOSITORY"
+echo "Action ref: $METRICS_ACTION_REF"
 
 # Version (picked from package.json)
 METRICS_VERSION=$(grep -Po '(?<="version": ").*(?=")' package.json)
@@ -41,8 +43,16 @@ METRICS_TAG=v$(echo $METRICS_VERSION | sed -r 's/^([0-9]+[.][0-9]+).*/\1/')
 echo "Image tag: $METRICS_TAG"
 
 # Image name
+# Custom pre-built action
+if [[ $METRICS_ACTION_REPOSITORY == "AjmalShajahan/metrics" ]] && [[ $METRICS_ACTION_REF =~ ^custom(-test)?$ ]] && [[ ! $METRICS_USE_PREBUILT_IMAGE =~ ^([Ff]alse|[Oo]ff|[Nn]o|0)$ ]]; then
+  METRICS_IMAGE="ghcr.io/ajmalshajahan/metrics:$METRICS_ACTION_REF"
+  echo "Using custom pre-built image $METRICS_IMAGE"
+  if ! docker image pull $METRICS_IMAGE; then
+    echo "Failed to fetch custom image from GitHub registry, will rebuild it locally"
+    METRICS_IMAGE=metrics:forked-$METRICS_VERSION
+  fi
 # Official action
-if [[ $METRICS_SOURCE == "gh-metrics" ]]; then
+elif [[ $METRICS_SOURCE == "gh-metrics" ]]; then
   # Use registry with pre-built images
   if [[ ! $METRICS_USE_PREBUILT_IMAGE =~ ^([Ff]alse|[Oo]ff|[Nn]o|0)$ ]]; then
     # Is released version

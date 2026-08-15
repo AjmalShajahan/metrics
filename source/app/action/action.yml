@@ -30,6 +30,8 @@ runs:
       env:
         METRICS_ACTION: ${{ github.action }}
         METRICS_ACTION_PATH: ${{ github.action_path }}
+        METRICS_ACTION_REPOSITORY: ${{ github.action_repository }}
+        METRICS_ACTION_REF: ${{ github.action_ref }}
         METRICS_USE_PREBUILT_IMAGE: ${{ inputs.use_prebuilt_image }}
         INPUTS: ${{ toJson(inputs) }}
         TZ: ${{ inputs.config_timezone }}

@@ -1,0 +1,43 @@
+name: Publish custom container images
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [custom, custom-test]
+
+permissions: {}
+
+concurrency:
+  group: custom-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Publish ${{ github.ref_name }} image
+    if: >-
+      github.repository == 'AjmalShajahan/metrics' &&
+      (github.ref_name == 'custom' || github.ref_name == 'custom-test')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/ajmalshajahan/metrics:${{ github.ref_name }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build image
+        run: docker build --tag "$IMAGE" .
+
+      - name: Publish image
+        run: docker push "$IMAGE"
