@@ -1,3 +1,5 @@
+Ajmal
+ajmalshajahan
 appid
 apikey
 apiname
@@ -31,6 +33,7 @@ rbga
 readmes
 rtime
 scm
+Shajahan
 shas
 splatoon
 Splatnet
