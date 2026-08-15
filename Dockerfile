@@ -1,8 +1,6 @@
 # Base image
 FROM node:20-bookworm-slim
 
-# Copy repository
-COPY . /metrics
 WORKDIR /metrics
 
 # Environment variables
@@ -10,11 +8,9 @@ ENV PUPPETEER_SKIP_DOWNLOAD 1
 ENV PUPPETEER_EXECUTABLE_PATH "google-chrome-stable"
 ENV PUPPETEER_BROWSER_PATH "google-chrome-stable"
 
-# Setup
-RUN chmod +x /metrics/source/app/action/index.mjs \
-  # Install latest chrome dev package, fonts to support major charsets and skip chromium download on puppeteer install
-  # Based on https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-in-docker
-  && apt-get update \
+# Install latest Chrome, fonts, and supporting build/runtime dependencies.
+# Based on https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-in-docker
+RUN apt-get update \
   && apt-get install -y xz-utils \
   && apt-get install -y wget gnupg ca-certificates libgconf-2-4 \
   && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
@@ -30,10 +26,17 @@ RUN chmod +x /metrics/source/app/action/index.mjs \
   # Install python for node-gyp
   && apt-get install -y python3 \
   # Clean apt/lists
-  && rm -rf /var/lib/apt/lists/* \
-  # Install node modules and rebuild indexes
-  && npm ci \
-  && npm run build
+  && rm -rf /var/lib/apt/lists/*
+
+# Install dependencies before copying source so this layer stays cached when
+# only application code changes.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy the repository and build generated files.
+COPY . .
+RUN npm run build \
+  && chmod +x /metrics/source/app/action/index.mjs
 
 # Execute GitHub action
-ENTRYPOINT node /metrics/source/app/action/index.mjs
+ENTRYPOINT ["node", "/metrics/source/app/action/index.mjs"]
