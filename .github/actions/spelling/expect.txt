@@ -19,9 +19,9 @@ Bizau
 blankslate
 brackethighlighter
 btn
+buildx
 cacheable
 cakeday
-charsets
 chrisbottin
 cloudinary
 codelines
@@ -76,6 +76,7 @@ geopath
 getrecenttracks
 gettopartists
 gettoptracks
+gha
 ghactions
 ghquery
 gifencoder
