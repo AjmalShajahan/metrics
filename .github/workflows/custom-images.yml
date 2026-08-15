@@ -12,17 +12,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  publish:
-    name: Publish ${{ github.ref_name }} image
+  build:
+    name: Build test image
     if: >-
       github.repository == 'AjmalShajahan/metrics' &&
-      (github.ref_name == 'custom' || github.ref_name == 'custom-test')
+      github.ref_name == 'custom-test'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     env:
-      IMAGE: ghcr.io/ajmalshajahan/metrics:${{ github.ref_name }}
+      IMAGE: ghcr.io/ajmalshajahan/metrics
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
@@ -44,6 +44,52 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.IMAGE }}
-          cache-from: type=gha,scope=metrics-${{ github.ref_name }}
-          cache-to: type=gha,mode=max,scope=metrics-${{ github.ref_name }}
+          tags: |
+            ${{ env.IMAGE }}:custom-test
+            ${{ env.IMAGE }}:sha-${{ github.sha }}
+          cache-from: type=gha,scope=metrics-custom-image
+          cache-to: type=gha,mode=max,scope=metrics-custom-image
+
+  promote:
+    name: Promote tested image
+    if: >-
+      github.repository == 'AjmalShajahan/metrics' &&
+      github.ref_name == 'custom'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      SOURCE_IMAGE: ghcr.io/ajmalshajahan/metrics:sha-${{ github.sha }}
+      TARGET_IMAGE: ghcr.io/ajmalshajahan/metrics:custom
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Wait for tested image
+        run: |
+          for attempt in {1..60}; do
+            if docker buildx imagetools inspect "$SOURCE_IMAGE" > /dev/null 2>&1; then
+              exit 0
+            fi
+            echo "Tested image is not available yet (attempt $attempt/60)"
+            sleep 10
+          done
+          echo "::error::Tested image $SOURCE_IMAGE was not published"
+          exit 1
+
+      - name: Promote tested image
+        run: docker buildx imagetools create --tag "$TARGET_IMAGE" "$SOURCE_IMAGE"
+
+      - name: Verify promoted digest
+        run: |
+          SOURCE_DIGEST=$(docker buildx imagetools inspect "$SOURCE_IMAGE" --format '{{json .Manifest.Digest}}')
+          TARGET_DIGEST=$(docker buildx imagetools inspect "$TARGET_IMAGE" --format '{{json .Manifest.Digest}}')
+          test "$SOURCE_DIGEST" = "$TARGET_DIGEST"

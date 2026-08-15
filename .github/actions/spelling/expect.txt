@@ -104,6 +104,7 @@ hyperlinks
 identicons
 ies
 iframes
+imagetools
 imagga
 imgb
 indepth
