@@ -4,9 +4,9 @@ FROM node:20-bookworm-slim
 WORKDIR /metrics
 
 # Environment variables
-ENV PUPPETEER_SKIP_DOWNLOAD 1
-ENV PUPPETEER_EXECUTABLE_PATH "google-chrome-stable"
-ENV PUPPETEER_BROWSER_PATH "google-chrome-stable"
+ENV PUPPETEER_SKIP_DOWNLOAD=1
+ENV PUPPETEER_EXECUTABLE_PATH=google-chrome-stable
+ENV PUPPETEER_BROWSER_PATH=google-chrome-stable
 
 # Install latest Chrome, fonts, and supporting build/runtime dependencies.
 # Based on https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-in-docker
