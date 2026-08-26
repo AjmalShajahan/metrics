@@ -189,6 +189,7 @@ export class IndepthAnalyzer extends Analyzer {
   /**Analyze a repository */
   async analyze(path, {ref} = {}) {
     const commits = await this.commits(path, {ref})
+    this.results.verified.signature += commits.filter(({verified}) => verified).length
     return super.analyze(path, {commits})
   }
 
