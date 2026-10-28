@@ -288,6 +288,33 @@ In this case the repository must be accessible directly.</p>
 <b>zero behaviour:</b> disable</br>
 <b>default:</b> 14<br></td>
   </tr>
+  <tr>
+    <td nowrap="nowrap"><h4><code>plugin_languages_verified_format</code></h4></td>
+    <td rowspan="2"><p>Verified signatures display format</p>
+<p>Available formats:</p>
+<ul>
+<li><code>smart</code>: Displays "X commits verified by GPG" or "X commits verified by SSH", or "X verified commits (Y GPG, Z SSH)" if both are present</li>
+<li><code>combined</code>: Displays "X verified commits"</li>
+<li><code>separate</code>: Displays "X GPG · Y SSH verified commits"</li>
+<li><code>gpg</code>: Displays only GPG verified commits count</li>
+<li><code>ssh</code>: Displays only SSH verified commits count</li>
+</ul>
+<img width="900" height="1" alt=""></td>
+  </tr>
+  <tr>
+    <td nowrap="nowrap">✨ On <code>master</code>/<code>main</code><br>
+<b>type:</b> <code>string</code>
+<br>
+<b>default:</b> smart<br>
+<b>allowed values:</b>
+<ul>
+  <li>smart</li>
+  <li>combined</li>
+  <li>separate</li>
+  <li>gpg</li>
+  <li>ssh</li>
+</ul></td>
+  </tr>
 </table>
 <!--/options-->
 
@@ -323,10 +350,10 @@ Below is a summary of the process used to compute indepth statistics:
 
 ## Most used mode
 
-1. Fetch GPG keys linked to your GitHub account
-  - automatically add attached emails to `commits_authoring`
+1. Fetch GPG and SSH signing keys linked to your GitHub account
+  - automatically add attached emails to `commits_authoring` (from GPG keys)
   - *web-flow* (GitHub's public key for changes made through web-ui) is also fetched
-2. Import GPG keys so they can be used to verify commits later
+2. Import GPG keys and configure SSH allowed signers so they can be used to verify commits later
 3. Iterate through repositories
   - early break if `plugin_languages_analysis_timeout` is reached
   - skip repository if it matches `plugin_languages_skipped`
@@ -341,12 +368,13 @@ Below is a summary of the process used to compute indepth statistics:
   - ensure these are within the range specified by `plugin_languages_indepth_custom` (if applicable)
 6. Process authored commits
   - early break if `plugin_languages_analysis_timeout_repositories` is reached
-  - using `git verify-commit` to check authenticity against imported GPG keys
+  - using `git verify-commit` to check authenticity against imported GPG and SSH keys
   - using `git log --patch` to extract added/deleted lines/bytes from each file
   - using [GitHub linguist](https://github.com/github/linguist) ([linguist-js](https://github.com/Nixinova/LinguistJS)) to detect language for each file
     - respect `plugin_languages_categories` option
     - if a file has since been deleted or moved, checkout on the last commit file was present and run linguist again
 7. Aggregate results
+  - count verified commits and display according to `plugin_languages_verified_format`
 
 ## Recently used mode
 
