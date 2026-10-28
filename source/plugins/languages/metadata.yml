@@ -197,3 +197,22 @@ inputs:
     min: 0
     max: 365
     zero: disable
+
+  plugin_languages_verified_format:
+    description: |
+      Verified signatures display format
+
+      Available formats:
+      - `smart`: Displays "X commits verified by GPG" or "X commits verified by SSH", or "X verified commits (Y GPG, Z SSH)" if both are present
+      - `combined`: Displays "X verified commits"
+      - `separate`: Displays "X GPG · Y SSH verified commits"
+      - `gpg`: Displays only GPG verified commits count
+      - `ssh`: Displays only SSH verified commits count
+    type: string
+    default: smart
+    values:
+      - smart
+      - combined
+      - separate
+      - gpg
+      - ssh

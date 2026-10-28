@@ -129,8 +129,11 @@ export class Analyzer {
       try {
         const {total, files, missed, lines, stats} = await this.linguist(path, {commit, cache})
         this.results.commits++
-        if (this.results.verified && commit.verified)
+        if (this.results.verified && commit.verified) {
           this.results.verified.signature++
+          if (commit.verified in this.results.verified)
+            this.results.verified[commit.verified]++
+        }
         this.results.total += total
         this.results.files += files
         this.results.missed.lines += missed.lines

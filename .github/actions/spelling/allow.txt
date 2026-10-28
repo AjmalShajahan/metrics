@@ -38,6 +38,7 @@ shas
 splatoon
 Splatnet
 ssh
+ssharmor
 statink
 STATINK
 steamcommunity

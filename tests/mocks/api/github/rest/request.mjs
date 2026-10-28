@@ -57,5 +57,27 @@ export default async function({faker}, target, that, args) {
     })
   }
 
+  //SSH signing keys
+  if (/^GET \/users\/.*\/ssh_signing_keys/.test(url) || /https:\/\/api\.github\.com\/users\/.*\/ssh_signing_keys/.test(url)) {
+    console.debug(`metrics/compute/mocks > mocking rest api result > rest.request ${url}`)
+    return ({
+      status: 200,
+      url,
+      headers: {
+        server: "GitHub.com",
+        status: "200 OK",
+        "x-oauth-scopes": "repo",
+      },
+      data: [
+        {
+          id: faker.number?.int?.(100000) ?? 1,
+          key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG4rT3vTt99Ox5kNdCTuEbMc6kvpmEdNRCZIoMrtUCHr",
+          title: "Mocked SSH Signing Key",
+          created_at: `${faker.date.past({years: 1})}`,
+        },
+      ],
+    })
+  }
+
   return target(...args)
 }

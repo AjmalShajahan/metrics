@@ -11,7 +11,16 @@ export class IndepthAnalyzer extends Analyzer {
   constructor() {
     super(...arguments)
     this.manual = {repositories: []}
-    Object.assign(this.results, {verified: {signature: 0}})
+    this.ssh = {keys: [], path: null}
+    this.format = arguments[1]?.format ?? "smart"
+    Object.assign(this.results, {
+      verified: {
+        signature: 0,
+        gpg: 0,
+        ssh: 0,
+        format: this.format,
+      },
+    })
   }
 
   /**Run analyzer */
@@ -19,16 +28,22 @@ export class IndepthAnalyzer extends Analyzer {
     this.manual.repositories = repositories.filter(repo => typeof repo === "string")
     return super.run(async () => {
       await this.gpgarmor()
-      for (const repository of repositories) {
-        if (this.results.partial.global)
-          break
-        if (this.ignore(repository))
-          continue
-        if (await this.clone(repository)) {
-          const {path, ref} = this.parse(repository)
-          await this.analyze(path, {ref})
-          await this.clean(path)
+      await this.ssharmor()
+      try {
+        for (const repository of repositories) {
+          if (this.results.partial.global)
+            break
+          if (this.ignore(repository))
+            continue
+          if (await this.clone(repository)) {
+            const {path, ref} = this.parse(repository)
+            await this.analyze(path, {ref})
+            await this.clean(path)
+          }
         }
+      }
+      finally {
+        await this.cleanSigners()
       }
     })
   }
@@ -88,6 +103,40 @@ export class IndepthAnalyzer extends Analyzer {
     }
   }
 
+  /**Populate ssh signing keys */
+  async ssharmor() {
+    try {
+      this.debug("fetching ssh signing keys")
+      const {data: keys = []} = await (this.rest.users.listSshSigningKeysForUser?.({username: this.login}) ?? this.rest.request("GET /users/{username}/ssh_signing_keys", {username: this.login})).catch(() => ({data: []}))
+      this.ssh.keys.push(...keys.map(({key}) => key?.trim()).filter(Boolean))
+      this.debug(`fetched ${this.ssh.keys.length} ssh signing keys`)
+    }
+    catch (error) {
+      this.debug(`an error occurred while fetching ssh signing keys (${error})`)
+    }
+
+    if (this.ssh.keys.length) {
+      const allowedSignersPath = paths.join(os.tmpdir(), `${this.uid}.allowed_signers`)
+      try {
+        this.debug(`saving ssh allowed signers to ${allowedSignersPath}`)
+        const lines = this.ssh.keys.map(key => `* namespaces="git" ${key}`)
+        await fs.writeFile(allowedSignersPath, lines.join("\n"))
+        this.ssh.path = allowedSignersPath
+      }
+      catch (error) {
+        this.debug(`an error occurred while writing ssh allowed signers (${error})`)
+      }
+    }
+  }
+
+  /**Clean signers */
+  async cleanSigners() {
+    if (this.ssh?.path) {
+      this.debug(`cleaning ssh allowed signers ${this.ssh.path}`)
+      await fs.rm(this.ssh.path, {recursive: true, force: true}).catch(error => this.debug(`failed to clean ${this.ssh.path} (${error})`))
+    }
+  }
+
   /**Filter related commits in repository */
   async filter(path, {ref}) {
     const commits = new Set()
@@ -130,10 +179,21 @@ export class IndepthAnalyzer extends Analyzer {
     const commits = []
     for (const sha of shas) {
       try {
+        let verified = null
+        if ("verified" in this.results) {
+          verified = await this.shell.run(`git verify-commit ${sha}`, {cwd: path, env: {LANG: "en_GB"}}, {log: false, debug: false, prefixed: false})
+            .then(() => "gpg")
+            .catch(() => null)
+          if ((!verified) && (this.ssh?.path)) {
+            verified = await this.shell.run(`git -c gpg.format=ssh -c gpg.ssh.allowedSignersFile="${this.ssh.path}" verify-commit ${sha}`, {cwd: path, env: {LANG: "en_GB"}}, {log: false, debug: false, prefixed: false})
+              .then(() => "ssh")
+              .catch(() => null)
+          }
+        }
         commits.push({
           sha,
           name: await this.shell.run(`git log ${sha} --format="%s (authored by %an on %cI)" --max-count=1`, {cwd: path, env: {LANG: "en_GB"}}, {log: false, debug: false, prefixed: false}),
-          verified: ("verified" in this.results) ? await this.shell.run(`git verify-commit ${sha}`, {cwd: path, env: {LANG: "en_GB"}}, {log: false, debug: false, prefixed: false}).then(() => true).catch(() => null) : null,
+          verified,
           editions: await this.editions(path, {sha}),
         })
       }
